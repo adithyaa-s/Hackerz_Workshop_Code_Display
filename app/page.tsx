@@ -6,53 +6,306 @@ import { motion, useAnimation } from "framer-motion"
 
 export default function Home() {
   const controls = useAnimation()
-
   const codeSnippets = [
     {
-      title: "Model Architecture",
-      code: `class AIModel(nn.Module):
-    def __init__(self):
-        super(AIModel, self).__init__()
-        self.fc1 = nn.Linear(784, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, 10)
+      title: "Library Imports and Initialization",
+      code: `import numpy as np
+import nltk
+nltk.download('punkt')  
+from nltk.stem.porter import PorterStemmer
+stemmer = PorterStemmer()  
+`,
+    },
+    {
+      title: "Tokenization Function",
+      code: `def tokenize(sentence):
+    """
+    Split sentence into an array of words/tokens.
+    A token can be a word, punctuation, or number.
+    """
+    return nltk.word_tokenize(sentence)
+`,
+    },
+    {
+      title: "Stemming Function",
+      code: `def stem(word):
+    """
+    Perform stemming to find the root form of a word.
+    Examples:
+    words = ["organize", "organizes", "organizing"]
+    result = [stem(w) for w in words]
+    -> ["organ", "organ", "organ"]
+    """
+    return stemmer.stem(word.lower())
+`,
+    },
+    {
+      title: "Bag of Words Function",
+      code: `def bag_of_words(tokenized_sentence, words):
+    """
+    Return a bag-of-words array:
+    1 for each known word that exists in the sentence, 0 otherwise.
+    """
+    # Stem each word in the tokenized sentence
+    sentence_words = [stem(word) for word in tokenized_sentence]
+    # Initialize bag with zeros for each known word
+    bag = np.zeros(len(words), dtype=np.float32)
+    for idx, w in enumerate(words):
+        if w in sentence_words: 
+            bag[idx] = 1
 
-    def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        return self.fc3(x)`,
+    return bag
+`,
+    },
+    {
+      title: "Importing PyTorch and Defining the Model",
+      code: `import torch
+import torch.nn as nn
+`,
+    },
+    {
+      title: "Defining the Neural Network Class",
+      code: `class NeuralNet(nn.Module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super(NeuralNet, self).__init__()
+        self.l1 = nn.Linear(input_size, hidden_size) 
+        self.l2 = nn.Linear(hidden_size, hidden_size) 
+        self.l3 = nn.Linear(hidden_size, num_classes)
+        self.relu = nn.ReLU()
+`,
+    },
+    {
+      title: "Forward Propagation Method",
+      code: `def forward(self, x):
+    out = self.l1(x)  # Pass through first layer
+    out = self.relu(out)  # Apply ReLU
+    out = self.l2(out)  # Pass through second layer
+    out = self.relu(out)  # Apply ReLU
+    out = self.l3(out)  # Pass through final layer
+    # No activation and no softmax at the end
+    return out
+
+`,
+    },
+    {
+      title: "Importing Dependencies and Loading Data",
+      code: `import numpy as np
+import random
+import json
+import nltk
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+
+from nltk_utils import bag_of_words, tokenize, stem
+from model import NeuralNet
+
+nltk.download('punkt_tab')  # Ensure correct package name; change to 'punkt' if typo
+with open('intents.json', 'r') as f:
+    intents = json.load(f)
+
+
+`,
+    },
+    {
+      title: "Preprocessing Data",
+      code: `all_words = []
+tags = []
+xy = []
+for intent in intents['intents']:
+    tag = intent['tag']
+    tags.append(tag)
+    for pattern in intent['patterns']:
+        w = tokenize(pattern)
+        all_words.extend(w)
+        xy.append((w, tag))
+
+ignore_words = ['?', '.', '!']
+all_words = [stem(w) for w in all_words if w not in ignore_words]
+all_words = sorted(set(all_words))
+tags = sorted(set(tags))
+
+`,
+    },
+    {
+      title: "Importing Dependencies and Loading Data",
+      code: `import numpy as np
+import random
+import json
+import nltk
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+
+from nltk_utils import bag_of_words, tokenize, stem
+from model import NeuralNet
+
+nltk.download('punkt_tab')  # Ensure correct package name; change to 'punkt' if typo
+with open('intents.json', 'r') as f:
+    intents = json.load(f)
+`,
+    },
+    {
+      title: "Preprocessing Data",
+      code: `all_words = []
+tags = []
+xy = []
+for intent in intents['intents']:
+    tag = intent['tag']
+    tags.append(tag)
+    for pattern in intent['patterns']:
+        w = tokenize(pattern)
+        all_words.extend(w)
+        xy.append((w, tag))
+
+ignore_words = ['?', '.', '!']
+all_words = [stem(w) for w in all_words if w not in ignore_words]
+all_words = sorted(set(all_words))
+tags = sorted(set(tags))
+`,
+    },
+    {
+      title: "Preparing Training Data",
+      code: `X_train = []
+y_train = []
+for (pattern_sentence, tag) in xy:
+    bag = bag_of_words(pattern_sentence, all_words)
+    X_train.append(bag)
+    label = tags.index(tag)
+    y_train.append(label)
+
+X_train = np.array(X_train)
+y_train = np.array(y_train)
+`,
+    },
+    {
+      title: "Defining Dataset and DataLoader",
+      code: `class ChatDataset(Dataset):
+    def __init__(self):
+        self.n_samples = len(X_train)
+        self.x_data = X_train
+        self.y_data = y_train
+
+    def __getitem__(self, index):
+        return self.x_data[index], self.y_data[index]
+
+    def __len__(self):
+        return self.n_samples
+
+dataset = ChatDataset()
+train_loader = DataLoader(dataset=dataset, batch_size=8, shuffle=True)
+
+`,
     },
     {
       title: "Training Loop",
-      code: `for epoch in range(num_epochs):
-    for batch_idx, (data, target) in enumerate(train_loader):
+      code: `device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = NeuralNet(input_size, hidden_size, output_size).to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+for epoch in range(1000):
+    for words, labels in train_loader:
+        words = words.to(device)
+        labels = labels.to(dtype=torch.long).to(device)
+        
+        outputs = model(words)
+        loss = criterion(outputs, labels)
+        
         optimizer.zero_grad()
-        output = model(data)
-        loss = criterion(output, target)
         loss.backward()
         optimizer.step()
 
-        if batch_idx % 100 == 0:
-            print(f'Epoch {epoch} | Batch {batch_idx} | Loss: {loss.item():.4f}')`,
+    if (epoch + 1) % 100 == 0:
+        print(f'Epoch [{epoch + 1}/1000], Loss: {loss.item():.4f}')
+`,
     },
     {
-      title: "Evaluation Function",
-      code: `def evaluate(model, test_loader):
-    model.eval()
-    test_loss = 0
-    correct = 0
-    with torch.no_grad():
-        for data, target in test_loader:
-            output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item()
-            pred = output.argmax(dim=1, keepdim=True)
-            correct += pred.eq(target.view_as(pred)).sum().item()
-    
-    test_loss /= len(test_loader.dataset)
-    accuracy = 100. * correct / len(test_loader.dataset)
-    
-    print(f'Test set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} ({accuracy:.2f}%)')`,
+      title: "Import Statements and Flask App Setup",
+      code: `from flask import Flask, render_template, request, jsonify
+import torch
+import random
+import json
+from model import NeuralNet
+from nltk_utils import bag_of_words, tokenize
+
+app = Flask(__name__)
+`,
     },
+    {
+      title: "Loading Intents and Model Data",
+      code: `with open('intents.json', 'r') as json_data:
+    intents = json.load(json_data)
+
+FILE = "data.pth"
+data = torch.load(FILE)
+
+input_size = data["input_size"]
+hidden_size = data["hidden_size"]
+output_size = data["output_size"]
+all_words = data['all_words']
+tags = data['tags']
+model_state = data["model_state"]
+`,
+    },
+    {
+      title: "Initializing the Neural Network Model",
+      code: `model = NeuralNet(input_size, hidden_size, output_size)
+model.load_state_dict(model_state)
+model.eval()
+
+`,
+    },
+    {
+      title: "Processing the User Input and Generating a Response",
+      code: `def process_input(input_text):
+    sentence = tokenize(input_text)
+    X = bag_of_words(sentence, all_words)
+    X = X.reshape(1, X.shape[0])
+    X = torch.from_numpy(X).to(torch.float32)
+    output = model(X)
+    _, predicted = torch.max(output, dim=1)
+    tag = tags[predicted.item()]
+    probs = torch.softmax(output, dim=1)
+    prob = probs[0][predicted.item()]
+
+    if prob.item() >= 0.81:
+        for intent in intents['intents']:
+            if tag == intent["tag"]:
+                return random.choice(intent['responses'])
+    else:
+        return "I'm not sure how to respond to that. Can you please rephrase?"
+
+`,
+    },
+    {
+      title: "Defining Routes for Web Pages and Message Sending",
+      code: `@app.route('/')
+def home():
+    return render_template('demoo.html')
+
+
+@app.route('/redirect/<page_name>')
+def redirect_to_page(page_name):
+    return render_template(f'{page_name}.html')
+
+
+@app.route('/send-message', methods=['POST'])
+def send_message():
+    message = request.json['message']
+    response = process_input(message)
+    return jsonify({'response': response})
+
+
+`,
+    },
+    {
+      title: "Running the Flask App",
+      code: `
+if __name__ == '__main__':
+    app.run(debug=True)
+`,
+    }
   ]
 
   useEffect(() => {
@@ -72,7 +325,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          AI Model Showcase
+          Codebase for the Workshop
         </motion.h1>
         <div className="space-y-8">
           {codeSnippets.map((snippet, index) => (

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI&ML Workshop",
-  description: "The Codebase for the AI&ML Workshop",
+  title: "AI & ML Workshop",
+  description: "The Codebase for the AI & ML Workshop",
 };
 
 export default function RootLayout({
